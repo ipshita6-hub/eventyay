@@ -42,8 +42,13 @@ def locale_context(request):
     AVAILABLE_CALENDAR_LOCALES = tuple(
         f.name.removesuffix('.global.min.js') for f in cal_static_dir.rglob('*.global.min.js')
     )
+    # Build language list with natural names (native language names)
+    languages_with_natural_names = [
+        (code, settings.LANGUAGES_INFORMATION[code]['natural_name'])
+        for code in dict(settings.LANGUAGES)
+    ]
     languages = sorted(
-        settings.LANGUAGES,
+        languages_with_natural_names,
         key=lambda l: (
             0 if l[0] in settings.LANGUAGES_OFFICIAL else (1 if l[0] not in settings.LANGUAGES_INCUBATING else 2),
             str(l[1]),
@@ -95,6 +100,7 @@ def system_information(request):
             context['header_links'] = [
                 {'label': link.label, 'url': link.url} for link in event.extra_links.all() if link.role == 'header'
             ]
+            context['show_online_video_link'] = bool(event.settings.venueless_url) and event.settings.get('venueless_show_public_link', False)
         for __, response in footer_link.send(event, request=request):
             if isinstance(response, list):
                 _footer += response
